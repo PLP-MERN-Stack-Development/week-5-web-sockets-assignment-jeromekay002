@@ -35,38 +35,44 @@ export const useSocket = () => {
     socket.disconnect();
   };
 
-  // Send a message
-  const sendMessage = (message) => {
-    socket.emit('send_message', { message });
+  // Correct place for emitting a message
+  const sendMessage = (message, username) => {
+    if (!message.trim()) return;
+    const msg = {
+      username,
+      message: message.trim(),
+      timestamp: new Date().toISOString(),
+    };
+    socket.emit('send_message', msg);
   };
 
-  // Send a private message
+
+  // Private message
   const sendPrivateMessage = (to, message) => {
     socket.emit('private_message', { to, message });
   };
 
-  // Set typing status
+  // Typing
   const setTyping = (isTyping) => {
     socket.emit('typing', isTyping);
   };
 
-  // Socket event listeners
+  // Listeners
   useEffect(() => {
-    // Connection events
-    const onConnect = () => {
-      setIsConnected(true);
+    // Connection
+    const onConnect = () => setIsConnected(true);
+    const onDisconnect = () => setIsConnected(false);
+
+    // Incoming public message
+    const onReceiveMessage = (msg) => {
+      console.log("Received message:", msg);
+
+      if (msg.username && msg.message) {
+        setMessages((prev) => [...prev, msg]);
+      }
     };
 
-    const onDisconnect = () => {
-      setIsConnected(false);
-    };
-
-    // Message events
-    const onReceiveMessage = (message) => {
-      setLastMessage(message);
-      setMessages((prev) => [...prev, message]);
-    };
-
+    // Incoming private message
     const onPrivateMessage = (message) => {
       setLastMessage(message);
       setMessages((prev) => [...prev, message]);
@@ -78,11 +84,9 @@ export const useSocket = () => {
     };
 
     const onUserJoined = (user) => {
-      // You could add a system message here
       setMessages((prev) => [
         ...prev,
         {
-          id: Date.now(),
           system: true,
           message: `${user.username} joined the chat`,
           timestamp: new Date().toISOString(),
@@ -91,11 +95,9 @@ export const useSocket = () => {
     };
 
     const onUserLeft = (user) => {
-      // You could add a system message here
       setMessages((prev) => [
         ...prev,
         {
-          id: Date.now(),
           system: true,
           message: `${user.username} left the chat`,
           timestamp: new Date().toISOString(),
@@ -103,12 +105,11 @@ export const useSocket = () => {
       ]);
     };
 
-    // Typing events
     const onTypingUsers = (users) => {
       setTypingUsers(users);
     };
 
-    // Register event listeners
+    // Register events
     socket.on('connect', onConnect);
     socket.on('disconnect', onDisconnect);
     socket.on('receive_message', onReceiveMessage);
@@ -117,8 +118,28 @@ export const useSocket = () => {
     socket.on('user_joined', onUserJoined);
     socket.on('user_left', onUserLeft);
     socket.on('typing_users', onTypingUsers);
+    socket.on("message_reaction", ({ messageId, reaction, username }) => {
+      setMessages((prev) =>
+        prev.map((msg) =>
+          msg.id === messageId
+            ? {
+              ...msg,
+              reactions: [...(msg.reactions || []), { reaction, username }],
+            }
+            : msg
+        )
+      );
+    });
 
-    // Clean up event listeners
+    socket.on("new_message_notification", (data) => {
+      if (Notification.permission === "granted") {
+        new Notification("New Message from " + data.from, {
+          body: data.message.text,
+        });
+      }
+    });
+
+    // Cleanup
     return () => {
       socket.off('connect', onConnect);
       socket.off('disconnect', onDisconnect);
@@ -128,6 +149,8 @@ export const useSocket = () => {
       socket.off('user_joined', onUserJoined);
       socket.off('user_left', onUserLeft);
       socket.off('typing_users', onTypingUsers);
+      socket.off("message_reaction");
+
     };
   }, []);
 
@@ -146,4 +169,4 @@ export const useSocket = () => {
   };
 };
 
-export default socket; 
+export default socket;

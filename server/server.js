@@ -48,32 +48,36 @@ io.on('connection', (socket) => {
     const message = {
       ...messageData,
       id: Date.now(),
-      sender: users[socket.id]?.username || 'Anonymous',
+      username: users[socket.id]?.username || 'Anonymous',
       senderId: socket.id,
       timestamp: new Date().toISOString(),
     };
-    
+
     messages.push(message);
-    
-    // Limit stored messages to prevent memory issues
-    if (messages.length > 100) {
-      messages.shift();
-    }
-    
-    io.emit('receive_message', message);
+    if (messages.length > 100) messages.shift();
+
+    // Emit to all clients
+    io.emit("receive_message", message);
+
+    // Notification event
+    io.emit("new_message_notification", {
+      message,
+      from: users[socket.id]?.username || 'Anonymous',
+    });
   });
+
 
   // Handle typing indicator
   socket.on('typing', (isTyping) => {
     if (users[socket.id]) {
       const username = users[socket.id].username;
-      
+
       if (isTyping) {
         typingUsers[socket.id] = username;
       } else {
         delete typingUsers[socket.id];
       }
-      
+
       io.emit('typing_users', Object.values(typingUsers));
     }
   });
@@ -88,9 +92,14 @@ io.on('connection', (socket) => {
       timestamp: new Date().toISOString(),
       isPrivate: true,
     };
-    
+
     socket.to(to).emit('private_message', messageData);
     socket.emit('private_message', messageData);
+  });
+
+  // reacting to messages
+  socket.on("react_to_message", ({ messageId, reaction, username }) => {
+    io.emit("message_reaction", { messageId, reaction, username });
   });
 
   // Handle disconnection
@@ -100,10 +109,10 @@ io.on('connection', (socket) => {
       io.emit('user_left', { username, id: socket.id });
       console.log(`${username} left the chat`);
     }
-    
+
     delete users[socket.id];
     delete typingUsers[socket.id];
-    
+
     io.emit('user_list', Object.values(users));
     io.emit('typing_users', Object.values(typingUsers));
   });

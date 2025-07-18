@@ -76,3 +76,27 @@ Your work will be automatically submitted when you push to your GitHub Classroom
 - [React Documentation](https://react.dev/)
 - [Express.js Documentation](https://expressjs.com/)
 - [Building a Chat Application with Socket.io](https://socket.io/get-started/chat) 
+
+**************************************************************
+# 🗨️ Real-Time Chat App
+
+A full-stack real-time chat application built with **Node.js**, **Express**, **Socket.io**, and **React (Vite)**. Users can send public or private messages, see who's online, share reactions, and receive real-time notifications.
+
+---
+
+## ✨ Features
+
+- ✅ Real-time messaging using Socket.io
+- ✅ User authentication (username-based)
+- ✅ Global and private chat support
+- ✅ Typing indicators
+- ✅ Online/offline user status
+- ✅ Message reactions (👍 ❤️ 😂 😮 😢 👎)
+- ✅ Unread message counter
+- ✅ Sound and browser notifications
+- ✅ Message timestamps
+- ✅ Responsive design
+
+
+# screen shot
+find screenshot in -> [https://github.com/PLP-MERN-Stack-Development/week-5-web-sockets-assignment-jeromekay002/blob/main/client/public/screenshots]
